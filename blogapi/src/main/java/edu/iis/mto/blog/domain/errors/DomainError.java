@@ -2,6 +2,7 @@ package edu.iis.mto.blog.domain.errors;
 
 public class DomainError extends RuntimeException {
 
+    public static final String USER_NOT_CONFIRMED = "cannot like post with unconfirmed acc";
     private static final long serialVersionUID = 1L;
 
     public static final String USER_NOT_FOUND = "unknown user";
