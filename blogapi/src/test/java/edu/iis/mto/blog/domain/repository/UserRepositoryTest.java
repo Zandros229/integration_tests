@@ -32,6 +32,7 @@ public class UserRepositoryTest {
     public void setUp() {
         user = new User();
         user.setFirstName("Jan");
+        user.setLastName("Figura");
         user.setEmail("john@domain.com");
         user.setAccountStatus(AccountStatus.NEW);
     }
@@ -61,6 +62,34 @@ public class UserRepositoryTest {
         User persistedUser = repository.save(user);
 
         Assert.assertThat(persistedUser.getId(), Matchers.notNullValue());
+    }
+
+    @Test
+    public void findUserWithFirstname(){
+        repository.save(user);
+        List<User> users = repository.findByFirstNameContainingOrLastNameContainingOrEmailContainingAllIgnoreCase("jan","","");
+        Assert.assertTrue(users.contains(user));
+    }
+
+    @Test
+    public void findUserWithLastname(){
+        repository.save(user);
+        List<User> users = repository.findByFirstNameContainingOrLastNameContainingOrEmailContainingAllIgnoreCase("","Figura","");
+        Assert.assertTrue(users.contains(user));
+    }
+
+    @Test
+    public void findUserWithEmail(){
+        repository.save(user);
+        List<User> users = repository.findByFirstNameContainingOrLastNameContainingOrEmailContainingAllIgnoreCase("","","john@domain.com");
+        Assert.assertTrue(users.contains(user));
+    }
+
+    @Test
+    public void dontFindUser(){
+        repository.save(user);
+        List<User> users = repository.findByFirstNameContainingOrLastNameContainingOrEmailContainingAllIgnoreCase("Andrzej","Wójcikowski","jeremi@ge.com");
+        Assert.assertFalse(users.contains(user));
     }
 
 }
