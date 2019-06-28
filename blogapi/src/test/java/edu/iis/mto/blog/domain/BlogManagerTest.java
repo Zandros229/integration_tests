@@ -10,12 +10,12 @@ import org.junit.Assert;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.ArgumentCaptor;
-import org.mockito.Mock;
 import org.mockito.Mockito;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.boot.test.mock.mockito.MockBean;
 import org.springframework.test.context.junit4.SpringRunner;
+
 import edu.iis.mto.blog.api.request.UserRequest;
 import edu.iis.mto.blog.domain.model.AccountStatus;
 import edu.iis.mto.blog.domain.model.User;
@@ -23,113 +23,84 @@ import edu.iis.mto.blog.domain.repository.UserRepository;
 import edu.iis.mto.blog.mapper.BlogDataMapper;
 import edu.iis.mto.blog.services.BlogService;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.Optional;
+
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
 public class BlogManagerTest {
 
     @MockBean
-    UserRepository userRepository;
+    private UserRepository userRepository;
 
     @MockBean
-    private LikePostRepository postRepository;
+    private BlogPostRepository blogPostRepository;
 
     @MockBean
-    private BlogPostRepository blogRepository;
+    private LikePostRepository likePostRepository;
 
     @Autowired
-    BlogDataMapper dataMapper;
+    private BlogDataMapper dataMapper;
 
     @Autowired
-    BlogService blogService;
+    private BlogService blogService;
+
     @Test
     public void creatingNewUserShouldSetAccountStatusToNEW() {
         blogService.createUser(new UserRequest("John", "Steward", "john@domain.com"));
         ArgumentCaptor<User> userParam = ArgumentCaptor.forClass(User.class);
-        Mockito.verify(userRepository).save(userParam.capture());
+        verify(userRepository).save(userParam.capture());
         User user = userParam.getValue();
         Assert.assertThat(user.getAccountStatus(), Matchers.equalTo(AccountStatus.NEW));
     }
 
     @Test
-    public void userWithAccCanLikePost(){
+    public void shouldSaveAddedLikeByConfirmedAccountTest(){
+        User owner = new User();
+        owner.setEmail("owner@test.com");
+        owner.setId(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
 
-        User postUser = new User();
-        postUser.setFirstName("Janusz");
-        postUser.setLastName("Nowak");
-        postUser.setEmail("janusz.nowak@ge.com");
-        postUser.setId(0L);
-        postUser.setAccountStatus(AccountStatus.NEW);
-        userRepository.save(postUser);
-        Mockito.when(userRepository.findById(0L)).thenReturn(Optional.of(postUser));
-
-        User likeUser = new User();
-        likeUser.setFirstName("Jan");
-        likeUser.setLastName("Wójcikowski");
-        likeUser.setEmail("jan.wojcikowski@ge.com");
-        likeUser.setId(1L);
-        likeUser.setAccountStatus(AccountStatus.CONFIRMED);
-        userRepository.save(likeUser);
-        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(likeUser));
+        User liker = new User();
+        liker.setEmail("liker@test.com");
+        liker.setId(2L);
+        liker.setAccountStatus(AccountStatus.CONFIRMED);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(liker));
 
         BlogPost blogPost = new BlogPost();
-        blogPost.setUser(postUser);
-        blogPost.setEntry("xyz");
-        blogPost.setId(0L);
-        Mockito.when(blogRepository.findById(0L)).thenReturn(Optional.of(blogPost));
+        blogPost.setId(1L);
+        blogPost.setUser(owner);
+        when(blogPostRepository.findById(1L)).thenReturn(Optional.of(blogPost));
 
-        Mockito.when(postRepository.findByUserAndPost(likeUser,blogPost)).thenReturn(Optional.empty());
-        blogService.addLikeToPost(likeUser.getId(),blogPost.getId());
+        when(likePostRepository.findByUserAndPost(liker, blogPost)).thenReturn(Optional.empty());
+        blogService.addLikeToPost(liker.getId(), blogPost.getId());
 
-        ArgumentCaptor<LikePost> captor = ArgumentCaptor.forClass(LikePost.class);
-        Mockito.verify(postRepository).save(captor.capture());
-
-        LikePost likePost = captor.getValue();
-        Assert.assertEquals(likePost.getPost(),blogPost);
-        Assert.assertEquals(likePost.getUser(),likeUser);
-
+        ArgumentCaptor<LikePost> likePostParam = ArgumentCaptor.forClass(LikePost.class);
+        verify(likePostRepository).save(likePostParam.capture());
+        LikePost likePost = likePostParam.getValue();
+        Assert.assertThat(likePost.getPost(), Matchers.is(blogPost));
+        Assert.assertThat(likePost.getUser(), Matchers.is(liker));
     }
 
-    @Test (expected = DomainError.class)
-    public void userWithoutAccShouldLikedPost(){
+    @Test(expected = DomainError.class)
+    public void shouldThrownDomainErrorWhenUserAddLikeToOwnPostTest() {
+        User owner = new User();
+        owner.setEmail("owner@test.com");
+        owner.setId(1L);
+        when(userRepository.findById(1L)).thenReturn(Optional.of(owner));
 
-        User postUser = new User();
-        postUser.setFirstName("Janusz");
-        postUser.setLastName("Nowak");
-        postUser.setEmail("janusz.nowak@ge.com");
-        postUser.setId(0L);
-        postUser.setAccountStatus(AccountStatus.NEW);
-        userRepository.save(postUser);
-        Mockito.when(userRepository.findById(0L)).thenReturn(Optional.of(postUser));
-
-        User likeUser = new User();
-        likeUser.setFirstName("Jan");
-        likeUser.setLastName("Wójcikowski");
-        likeUser.setEmail("jan.wojcikowski@ge.com");
-        likeUser.setId(1L);
-        likeUser.setAccountStatus(AccountStatus.NEW);
-        userRepository.save(likeUser);
-        Mockito.when(userRepository.findById(1L)).thenReturn(Optional.of(likeUser));
+        User liker = new User();
+        liker.setEmail("liker@test.com");
+        liker.setId(2L);
+        when(userRepository.findById(2L)).thenReturn(Optional.of(liker));
 
         BlogPost blogPost = new BlogPost();
-        blogPost.setUser(postUser);
-        blogPost.setEntry("xyz");
-        blogPost.setId(0L);
-        Mockito.when(blogRepository.findById(0L)).thenReturn(Optional.of(blogPost));
+        blogPost.setId(1L);
+        blogPost.setUser(owner);
+        when(blogPostRepository.findById(1L)).thenReturn(Optional.of(blogPost));
 
-        Mockito.when(postRepository.findByUserAndPost(likeUser,blogPost)).thenReturn(Optional.empty());
-        blogService.addLikeToPost(likeUser.getId(),blogPost.getId());
-
-        ArgumentCaptor<LikePost> captor = ArgumentCaptor.forClass(LikePost.class);
-        Mockito.verify(postRepository).save(captor.capture());
-
-        LikePost likePost = captor.getValue();
-        Assert.assertEquals(likePost.getPost(),blogPost);
-        Assert.assertEquals(likePost.getUser(),likeUser);
-
+        blogService.addLikeToPost(owner.getId(), blogPost.getId());
     }
-
 }
