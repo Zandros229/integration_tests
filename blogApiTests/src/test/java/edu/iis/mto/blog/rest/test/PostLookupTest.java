@@ -17,23 +17,6 @@ public class PostLookupTest extends FunctionalTests {
     private static final String LIKED_POST_LOOKUP = "/blog/user/3/post";
     private static final String LIKE_POST = "/blog/user/1/like/2";
 
-    @Test
-    public void shouldReturnCorrectNumberOfPostsWhenValidUserTest() {
-        JSONObject jsonObj = new JSONObject();
-
-        RestAssured.given()
-                .accept(ContentType.JSON)
-                .header("Content-Type", "application/json;charset=UTF-8")
-                .body(jsonObj.toString())
-                .expect()
-                .log()
-                .all()
-                .statusCode(HttpStatus.SC_OK)
-                .and()
-                .body("size()", is(1))
-                .when()
-                .get(VALID_POST_LOOKUP);
-    }
 
     @Test
     public void shouldReturnNothingWhenUserWithNoPostsTest() {

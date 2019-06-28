@@ -29,7 +29,7 @@ public class CreatePostTest extends FunctionalTests {
 
     @Test
     public void creatingAPostForNonConfirmedUserShouldReturnBadRequest() {
-        JSONObject jsonObj = new JSONObject().put("Test", "Test");
+        JSONObject jsonObj = new JSONObject().put("entry", "Test");
 
         RestAssured.given()
                 .accept(ContentType.JSON)
